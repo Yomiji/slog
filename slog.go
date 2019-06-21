@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 )
 
 /*************
@@ -35,6 +36,12 @@ var infoLine = false
 var warnLine = false
 var failLine = false
 var debugLine = false
+
+var filteredSources []string = make([]string, 0)
+
+func FilterSource(source string) {
+	filteredSources = append(filteredSources, source)
+}
 
 func ToggleLogger(on bool, w io.Writer, logString string) (logger *log.Logger) {
 	if on {
@@ -79,52 +86,40 @@ func ToggleLineNumberPrinting(info, warn, fail, debug bool) {
 	debugLine = debug
 }
 
-// Wrapper around the Info global log that allows for this api to log to that level correctly
-func Info(msg string, vars ...interface{}) {
-	if sInfo != nil {
+func logIt(logger *log.Logger, enabled bool,  msg string, vars ...interface{}) {
+	if logger != nil {
 		var formattedMsg = msg
-		if infoLine {
+		if enabled {
 			_, fn, line, _ := runtime.Caller(1)
+			// don't log if it ends in a filtered source
+			for _,v := range filteredSources {
+				if strings.HasSuffix(fn, v) {
+					return
+				}
+			}
 			formattedMsg = fmt.Sprintf("%s:%d %s", fn, line, msg)
 		}
-		sInfo.Printf(formattedMsg, vars...)
+		logger.Printf(formattedMsg, vars...)
 	}
+}
+// Wrapper around the Info global log that allows for this api to log to that level correctly
+func Info(msg string, vars ...interface{}) {
+	logIt(sInfo, infoLine, msg, vars...)
 }
 
 // Wrapper around the Warn global log that allows for this api to log to that level correctly
 func Warn(msg string, vars ...interface{}) {
-	if sWarn != nil {
-		var formattedMsg = msg
-		if warnLine {
-			_, fn, line, _ := runtime.Caller(1)
-			formattedMsg = fmt.Sprintf("%s:%d %s", fn, line, msg)
-		}
-		sWarn.Printf(formattedMsg, vars...)
-	}
+	logIt(sWarn, warnLine, msg, vars...)
 }
 
 // Wrapper around the Error global log that allows for this api to log to that level correctly
 func Fail(msg string, vars ...interface{}) {
-	if sError != nil {
-		var formattedMsg = msg
-		if failLine {
-			_, fn, line, _ := runtime.Caller(1)
-			formattedMsg = fmt.Sprintf("%s:%d %s", fn, line, msg)
-		}
-		sError.Printf(formattedMsg, vars...)
-	}
+	logIt(sError, failLine, msg, vars...)
 }
 
 // Wrapper around the Debug global log that allows for this api to log to that level correctly
 func Debug(msg string, vars ...interface{}) {
-	if sDebug != nil {
-		var formattedMsg = msg
-		if debugLine {
-			_, fn, line, _ := runtime.Caller(1)
-			formattedMsg = fmt.Sprintf("%s:%d %s", fn, line, msg)
-		}
-		sDebug.Printf(formattedMsg, vars...)
-	}
+	logIt(sDebug, debugLine, msg, vars...)
 }
 
 // Conveniently disable all logging for this api
