@@ -39,6 +39,7 @@ var debugLine = false
 
 var filteredSources []string = make([]string, 0)
 
+// When called, adds a source to filter out from the logging
 func FilterSource(source string) {
 	filteredSources = append(filteredSources, source)
 }
@@ -86,11 +87,11 @@ func ToggleLineNumberPrinting(info, warn, fail, debug bool) {
 	debugLine = debug
 }
 
-func logIt(logger *log.Logger, enabled bool,  msg string, vars ...interface{}) {
+func logIt(logger *log.Logger, linePrintingEnabled bool,  msg string, vars ...interface{}) {
 	if logger != nil {
 		var formattedMsg = msg
-		if enabled {
-			_, fn, line, _ := runtime.Caller(1)
+		if linePrintingEnabled {
+			_, fn, line, _ := runtime.Caller(2)
 			// don't log if it ends in a filtered source
 			for _,v := range filteredSources {
 				if strings.HasSuffix(fn, v) {
