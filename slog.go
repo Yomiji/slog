@@ -61,6 +61,7 @@ func SetProjectName(projectName string) {
 	sWarnString = projectName + " [WARN]: "
 	sErrorString = projectName + " [ERROR]: "
 	sDebugString = projectName + " [DEBUG]: "
+	ToggleLogging(sInfo != nil, sWarn != nil, sError != nil, sDebug != nil)
 }
 
 // turn writing on or off for the given log
