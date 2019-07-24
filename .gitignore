@@ -1,6 +1,8 @@
 # Created by .ignore support plugin (hsz.mobi)
 ### kbaton-dep-go-subl template
 # Created by .ignore support plugin (hsz.mobi)
+### kbaton-dep-go-subl template
+# Created by .ignore support plugin (hsz.mobi)
 ### Go template
 # Binaries for programs and plugins
 ../build/go_build_Code_.exe
@@ -50,7 +52,24 @@ GitHub.sublime-settings
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 # User-specific stuff
-.idea
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/dictionaries
+.idea/**/shelf
+
+# Sensitive or high-churn files
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
+.idea/**/tools.protobuf.xml
+
+# Gradle
+.idea/**/gradle.xml
+.idea/**/libraries
 
 # CMake
 cmake-build-debug/
@@ -88,3 +107,4 @@ fabric.properties
 .idea/codeStyles/codeStyleConfig.xml
 .idea/markdown-navigator.xml
 /vendor/
+Gopkg.lock
