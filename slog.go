@@ -15,94 +15,26 @@ import (
 
 //Loggers provided:
 //  Level | Output | Format
-// 	Info: Standard Output - 'ProjectName [INFO] %date% %time%'
-// 	Warn: Standard Error - 'ProjectName [DEBUG] %date% %time%'
-// 	Error: Standard Error - 'ProjectName [ERROR] %date% %time%'
+// 	Info: Standard Output - 'projectName [INFO] %date% %time%'
+// 	Warn: Standard Error - 'projectName [DEBUG] %date% %time%'
+// 	Error: Standard Error - 'projectName [ERROR] %date% %time%'
 // 	Debug: Disabled by default
 var (
-	ProjectName              = ""
-	sInfoString              = ProjectName + " [INFO]: "
-	sWarnString              = ProjectName + " [WARN]: "
-	sErrorString             = ProjectName + " [ERROR]: "
-	sDebugString             = ProjectName + " [DEBUG]: "
+	sInfoString              = " [INFO]: "
+	sWarnString              = " [WARN]: "
+	sErrorString             = " [ERROR]: "
+	sDebugString             = " [DEBUG]: "
 	sInfo                    = log.New(os.Stdout, sInfoString, log.Ldate|log.Ltime)
 	sWarn                    = log.New(os.Stderr, sWarnString, log.Ldate|log.Ltime)
 	sError                   = log.New(os.Stderr, sErrorString, log.Ldate|log.Ltime)
 	sDebug       *log.Logger = nil
+	// toggle line numbers for output messages
+	infoLine                 = false
+	warnLine                 = false
+	failLine                 = false
+	debugLine                = false
 )
 
-//Toggle line numbers for output messages
-var infoLine = false
-var warnLine = false
-var failLine = false
-var debugLine = false
-
-var filteredSources []string = make([]string, 0)
-
-// When called, adds a source to filter out from the logging
-func FilterSource(source string) {
-	filteredSources = append(filteredSources, source)
-}
-
-func ToggleLogger(on bool, w io.Writer, logString string) (logger *log.Logger) {
-	if on {
-		if w != nil {
-			logger = log.New(w, logString, log.Ldate|log.Ltime)
-		} else {
-			logger = log.New(os.Stdout, logString, log.Ldate|log.Ltime)
-		}
-	} else {
-		logger = nil
-	}
-	return logger
-}
-
-func ToggleInfo(on bool, w io.Writer) {
-	sInfo = ToggleLogger(on, w, sInfoString)
-}
-
-func ToggleWarn(on bool, w io.Writer) {
-	sWarn = ToggleLogger(on, w, sWarnString)
-}
-
-func ToggleError(on bool, w io.Writer) {
-	sError = ToggleLogger(on, w, sErrorString)
-}
-
-func ToggleDebug(on bool, w io.Writer) {
-	sDebug = ToggleLogger(on, w, sDebugString)
-}
-
-func ToggleLogging(info, warn, fail, debug bool) {
-	ToggleInfo(info, os.Stdout)
-	ToggleWarn(warn, os.Stderr)
-	ToggleWarn(fail, os.Stderr)
-	ToggleDebug(debug, os.Stdout)
-}
-
-func ToggleLineNumberPrinting(info, warn, fail, debug bool) {
-	infoLine = info
-	warnLine = warn
-	failLine = fail
-	debugLine = debug
-}
-
-func logIt(logger *log.Logger, linePrintingEnabled bool,  msg string, vars ...interface{}) {
-	if logger != nil {
-		var formattedMsg = msg
-		if linePrintingEnabled {
-			_, fn, line, _ := runtime.Caller(2)
-			// don't log if it ends in a filtered source
-			for _,v := range filteredSources {
-				if strings.HasSuffix(fn, v) {
-					return
-				}
-			}
-			formattedMsg = fmt.Sprintf("%s:%d %s", fn, line, msg)
-		}
-		logger.Printf(formattedMsg, vars...)
-	}
-}
 // Wrapper around the Info global log that allows for this api to log to that level correctly
 func Info(msg string, vars ...interface{}) {
 	logIt(sInfo, infoLine, msg, vars...)
@@ -123,6 +55,30 @@ func Debug(msg string, vars ...interface{}) {
 	logIt(sDebug, debugLine, msg, vars...)
 }
 
+// Set the prefix for the logs eg 'Nan0 [INFO]'
+func SetProjectName(projectName string) {
+	sInfoString = projectName + " [INFO]: "
+	sWarnString = projectName + " [WARN]: "
+	sErrorString = projectName + " [ERROR]: "
+	sDebugString = projectName + " [DEBUG]: "
+}
+
+// turn writing on or off for the given log
+func ToggleLogging(info, warn, fail, debug bool) {
+	toggleInfo(info, os.Stdout)
+	toggleWarn(warn, os.Stderr)
+	toggleFail(fail, os.Stderr)
+	toggleDebug(debug, os.Stdout)
+}
+
+// turn number line printing on or off for the given log
+func ToggleLineNumberPrinting(info, warn, fail, debug bool) {
+	infoLine = info
+	warnLine = warn
+	failLine = fail
+	debugLine = debug
+}
+
 // Conveniently disable all logging for this api
 func NoLogging() {
 	sInfo = nil
@@ -131,9 +87,60 @@ func NoLogging() {
 	sDebug = nil
 }
 
-func SetLogWriter(w io.Writer) {
-	ToggleInfo(sInfo != nil, w)
-	ToggleWarn(sWarn != nil, w)
-	ToggleError(sError != nil, w)
-	ToggleDebug(sDebug != nil, w)
+var filteredSources = make([]string, 0)
+
+// When called, adds a source to filter out from the logging based on the end of the log string
+func FilterSource(source string) {
+	filteredSources = append(filteredSources, source)
+}
+
+// turn info writing on or off
+func toggleInfo(on bool, w io.Writer) {
+	sInfo = toggleLogger(on, w, sInfoString)
+}
+
+// turn warn writing on or off
+func toggleWarn(on bool, w io.Writer) {
+	sWarn = toggleLogger(on, w, sWarnString)
+}
+
+// turn fail writing on or off
+func toggleFail(on bool, w io.Writer) {
+	sError = toggleLogger(on, w, sErrorString)
+}
+
+// turn debug writing on or off
+func toggleDebug(on bool, w io.Writer) {
+	sDebug = toggleLogger(on, w, sDebugString)
+}
+
+func logIt(logger *log.Logger, linePrintingEnabled bool, msg string, vars ...interface{}) {
+	if logger != nil {
+		var formattedMsg = msg
+		if linePrintingEnabled {
+			_, fn, line, _ := runtime.Caller(2)
+			// don't log if it ends in a filtered source
+			for _, v := range filteredSources {
+				if strings.HasSuffix(fn, v) {
+					return
+				}
+			}
+			formattedMsg = fmt.Sprintf("%s:%d %s", fn, line, msg)
+		}
+		logger.Printf(formattedMsg, vars...)
+	}
+}
+
+// turn logging on or off
+func toggleLogger(on bool, w io.Writer, logString string) (logger *log.Logger) {
+	if on {
+		if w != nil {
+			logger = log.New(w, logString, log.Ldate|log.Ltime)
+		} else {
+			logger = log.New(os.Stdout, logString, log.Ldate|log.Ltime)
+		}
+	} else {
+		logger = nil
+	}
+	return logger
 }
