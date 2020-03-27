@@ -20,20 +20,26 @@ import (
 // 	Error: Standard Error - 'projectName [ERROR] %date% %time%'
 // 	Debug: Disabled by default
 var (
-	sInfoString              = " [INFO]: "
-	sWarnString              = " [WARN]: "
-	sErrorString             = " [ERROR]: "
-	sDebugString             = " [DEBUG]: "
-	sInfo                    = log.New(os.Stdout, sInfoString, log.Ldate|log.Ltime)
-	sWarn                    = log.New(os.Stderr, sWarnString, log.Ldate|log.Ltime)
-	sError                   = log.New(os.Stderr, sErrorString, log.Ldate|log.Ltime)
-	sDebug       *log.Logger = nil
+	sGeneralString             = ""
+	sInfoString                = " [INFO]: "
+	sWarnString                = " [WARN]: "
+	sErrorString               = " [ERROR]: "
+	sDebugString               = " [DEBUG]: "
+	sGeneral                   = log.New(os.Stdout, sGeneralString, log.Ldate|log.Ltime|log.LUTC)
+	sInfo                      = log.New(os.Stdout, sInfoString, log.Ldate|log.Ltime)
+	sWarn                      = log.New(os.Stderr, sWarnString, log.Ldate|log.Ltime)
+	sError                     = log.New(os.Stderr, sErrorString, log.Ldate|log.Ltime)
+	sDebug         *log.Logger = nil
 	// toggle line numbers for output messages
-	infoLine                 = false
-	warnLine                 = false
-	failLine                 = false
-	debugLine                = false
+	infoLine  = false
+	warnLine  = false
+	failLine  = false
+	debugLine = false
 )
+
+func Log(msg string, vars ...interface{}) {
+	logIt(sGeneral, false, msg, vars...)
+}
 
 // Wrapper around the Info global log that allows for this api to log to that level correctly
 func Info(msg string, vars ...interface{}) {
@@ -57,6 +63,7 @@ func Debug(msg string, vars ...interface{}) {
 
 // Set the prefix for the logs eg 'Nan0 [INFO]'
 func SetProjectName(projectName string) {
+	sGeneralString = projectName + " "
 	sInfoString = projectName + " [INFO]: "
 	sWarnString = projectName + " [WARN]: "
 	sErrorString = projectName + " [ERROR]: "
@@ -82,10 +89,29 @@ func ToggleLineNumberPrinting(info, warn, fail, debug bool) {
 
 // Conveniently disable all logging for this api
 func NoLogging() {
+	sGeneral = nil
 	sInfo = nil
 	sWarn = nil
 	sError = nil
 	sDebug = nil
+}
+
+// Re-enable all logging
+func Reset() {
+	sGeneralString = ""
+	sInfoString = " [INFO]: "
+	sWarnString = " [WARN]: "
+	sErrorString = " [ERROR]: "
+	sDebugString = " [DEBUG]: "
+	sGeneral = log.New(os.Stdout, sGeneralString, log.Ldate|log.Ltime|log.LUTC)
+	sInfo = log.New(os.Stdout, sInfoString, log.Ldate|log.Ltime)
+	sWarn = log.New(os.Stderr, sWarnString, log.Ldate|log.Ltime)
+	sError = log.New(os.Stderr, sErrorString, log.Ldate|log.Ltime)
+	sDebug = nil
+	infoLine = false
+	warnLine = false
+	failLine = false
+	debugLine = false
 }
 
 var filteredSources = make([]string, 0)
